@@ -54,12 +54,19 @@
     .tile-512  { background: #edc850; color: #f9f6f2; font-size: 24px; }
     .tile-1024 { background: #edc53f; color: #f9f6f2; font-size: 20px; }
     .tile-2048 { background: #edc22e; color: #f9f6f2; font-size: 20px; }
+
+    #controls {
+      margin-top: 20px;
+      font-size: 18px;
+      color: #776e65;
+    }
   </style>
 </head>
 <body>
 
 <h1>2048 Game</h1>
 <div id="game-board"></div>
+<div id="controls">⬆️ ⬇️ ⬅️ ➡️ 방향키로 이동하세요!</div>
 
 <script>
   const boardSize = 4;
@@ -100,43 +107,57 @@
     });
   }
 
+  function transpose(matrix) {
+    return matrix[0].map((_, i) => matrix.map(row => row[i]));
+  }
+
+  function slide(row) {
+    let arr = row.filter(v => v !== 0);
+    for (let i = 0; i < arr.length - 1; i++) {
+      if (arr[i] === arr[i + 1]) {
+        arr[i] *= 2;
+        arr[i + 1] = 0;
+      }
+    }
+    arr = arr.filter(v => v !== 0);
+    while (arr.length < boardSize) {
+      arr.push(0);
+    }
+    return arr;
+  }
+
   function move(direction) {
     let moved = false;
-    const rotate = (b) => b[0].map((_, i) => b.map(row => row[i])).reverse();
-    const rotateBack = (b) => b[0].map((_, i) => b.map(row => row[i])).reverse();
-
-    const slide = (row) => {
-      let arr = row.filter(v => v);
-      for (let i = 0; i < arr.length - 1; i++) {
-        if (arr[i] === arr[i + 1]) {
-          arr[i] *= 2;
-          arr[i + 1] = 0;
-        }
-      }
-      return arr.filter(v => v).concat(Array(boardSize - arr.filter(v => v).length).fill(0));
-    };
-
     let newBoard = board.map(row => [...row]);
-    if (direction === 'up') {
-      newBoard = rotate(newBoard);
-    } else if (direction === 'down') {
-      newBoard = rotate(newBoard).map(row => row.reverse());
-    } else if (direction === 'right') {
-      newBoard = newBoard.map(row => row.reverse());
-    }
 
-    newBoard = newBoard.map(row => {
-      const newRow = slide(row);
-      if (!moved && newRow.toString() !== row.toString()) moved = true;
-      return newRow;
-    });
-
-    if (direction === 'up') {
-      newBoard = rotateBack(newBoard);
-    } else if (direction === 'down') {
-      newBoard = rotateBack(newBoard.map(row => row.reverse()));
+    if (direction === 'left') {
+      newBoard = newBoard.map(row => {
+        const newRow = slide(row);
+        if (newRow.toString() !== row.toString()) moved = true;
+        return newRow;
+      });
     } else if (direction === 'right') {
-      newBoard = newBoard.map(row => row.reverse());
+      newBoard = newBoard.map(row => {
+        const reversed = [...row].reverse();
+        const newRow = slide(reversed).reverse();
+        if (newRow.toString() !== row.toString()) moved = true;
+        return newRow;
+      });
+    } else if (direction === 'up') {
+      newBoard = transpose(newBoard).map(row => {
+        const newRow = slide(row);
+        if (newRow.toString() !== row.toString()) moved = true;
+        return newRow;
+      });
+      newBoard = transpose(newBoard);
+    } else if (direction === 'down') {
+      newBoard = transpose(newBoard).map(row => {
+        const reversed = [...row].reverse();
+        const newRow = slide(reversed).reverse();
+        if (newRow.toString() !== row.toString()) moved = true;
+        return newRow;
+      });
+      newBoard = transpose(newBoard);
     }
 
     if (moved) {
